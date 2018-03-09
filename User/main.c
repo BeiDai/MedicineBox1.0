@@ -99,7 +99,7 @@ int main(void)
 		usart3_init(115200); 
 		Motor_Init();
 		EN = 1; //关闭电机电源
-	  LED2=0;
+	  LED2=1;
 //	USART3_RX_STA=0; //允许接收数据
 //	positionNow = 1; //药盒初始位置为1
 	
@@ -213,7 +213,12 @@ void start_task(void *p_arg)
 								 
 	OS_TaskSuspend((OS_TCB*)&StartTaskTCB,&err);		//挂起开始任务		
 								 
+//  OSTaskDel((OS_TCB*)0,&err);	//删除start_task任务自身
+								 
 	OS_CRITICAL_EXIT();	//进入临界区
+								 
+								 
+							
 }
 
 
@@ -223,14 +228,14 @@ void led_task(void *p_arg)
 	CPU_SR_ALLOC();
 	p_arg = p_arg;
 	
-	OS_CRITICAL_ENTER();	//进入临界区
-
-//	LED2 = !LED2;
-	printf("LED TASK\r\n");
-
-	OS_CRITICAL_EXIT();	//退出临界区
-	
-//	OS_TaskSuspend((OS_TCB*)&LedTaskTCB,&err);		//挂起wifi初始化任务
+	while(1)
+	{
+		OS_CRITICAL_ENTER();	//进入临界区
+		LED2 = !LED2;
+		printf("LED TASK\r\n");
+		OS_CRITICAL_EXIT();	//退出临界区
+		OS_TaskSuspend((OS_TCB*)&LedTaskTCB,&err);		//挂起wifi初始化任务
+	}
 }
 
 void pos_task(void *p_arg)
@@ -238,14 +243,17 @@ void pos_task(void *p_arg)
 	OS_ERR err;
 	CPU_SR_ALLOC();
 	p_arg = p_arg;
-	OS_CRITICAL_ENTER();	//进入临界区
-	printf("pos task \r\n");
-	boxPosition_Init(1,350,6400*1000);
-	positionNow = 1;
-	positionReceive = 1;
-	OS_CRITICAL_EXIT();	//退出临界区
-	
-	OS_TaskSuspend((OS_TCB*)&PosTaskTCB,&err);		//挂起位置初始化任务	
+
+	while(1)
+	{
+		OS_CRITICAL_ENTER();	//进入临界区
+		printf("pos task \r\n");
+		boxPosition_Init(1,350,6400*1000);
+		positionNow = 1;
+		positionReceive = 1;
+		OS_CRITICAL_EXIT();	//退出临界区
+		OS_TaskSuspend((OS_TCB*)&PosTaskTCB,&err);		//挂起位置初始化任务
+	}		
 }
 
 
@@ -292,7 +300,7 @@ void main_task(void *p_arg)
 			
 			USART3_RX_STA=0;
 		}
-//		OSTaskResume((OS_TCB*)&LedTaskTCB,&err);	//
+		OSTaskResume((OS_TCB*)&LedTaskTCB,&err);	//
 		printf("恢复LED任务\r\n");
 		OSTimeDlyHMSM(0,0,1,0,OS_OPT_TIME_HMSM_STRICT,&err); //延时20ms
 		
