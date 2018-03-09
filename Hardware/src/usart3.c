@@ -1,9 +1,11 @@
+#include "sys.h"
 #include "delay.h"
 #include "usart3.h"
 #include "stdarg.h"	 	 
 #include "stdio.h"	 	 
 #include "string.h"	  
 #include "timer.h"
+#include "includes.h"					//ucos Ê¹ÓÃ	  
 
 //´®¿Ú·¢ËÍ»º´æÇø 	
 __align(8) u8 USART3_TX_BUF[USART3_MAX_SEND_LEN]; 	//·¢ËÍ»º³å,×î´óUSART3_MAX_SEND_LEN×Ö½Ú
@@ -19,9 +21,11 @@ u8 USART3_RX_BUF[USART3_MAX_RECV_LEN]; 				//½ÓÊÕ»º³å,×î´óUSART3_MAX_RECV_LEN¸ö×
 //[15]:0,Ã»ÓÐ½ÓÊÕµ½Êý¾Ý;1,½ÓÊÕµ½ÁËÒ»ÅúÊý¾Ý.
 //[14:0]:½ÓÊÕµ½µÄÊý¾Ý³¤¶È
 u16 USART3_RX_STA=0;  
+
 void USART3_IRQHandler(void)
 {
 		u8 res;	
+	  OSIntEnter();   
 		if(USART_GetITStatus(USART3, USART_IT_RXNE) != RESET)//½ÓÊÕµ½Êý¾Ý
 		{	 
 		res =USART_ReceiveData(USART3);		
@@ -38,7 +42,8 @@ void USART3_IRQHandler(void)
 				USART3_RX_STA|=1<<15;					//Ç¿ÖÆ±ê¼Ç½ÓÊÕÍê³É
 			} 
 		}  	
-	 }		
+	 }
+   OSIntExit();  		
 }  
 
 

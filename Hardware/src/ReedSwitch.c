@@ -1,3 +1,4 @@
+#include "sys.h"
 #include "reedswitch.h"
 
 void ReedSwitchInit(void)

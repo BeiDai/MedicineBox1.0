@@ -147,10 +147,11 @@ void atk_8266_test(void)
 void  atk_8266_config(void)
 {
 		u8 *p;
-		while(atk_8266_send_cmd("AT","OK",20))//检查WIFI模块是否在线
+	 
+		while(atk_8266_send_cmd("AT","OK",100))//检查WIFI模块是否在线
 		{
 			LED2=!LED2;
-			delay_ms(200);
+			delay_ms(1000);
 		}
 		while(atk_8266_send_cmd("ATE0","OK",20));//关闭回显
 		delay_ms(100);

@@ -1,3 +1,4 @@
+#include "sys.h"
 #include "led.h" 
 
 //初始化PF9和PF10为输出口.并使能这两个口的时钟		    
@@ -15,6 +16,7 @@ void LED_Init(void)
   GPIO_InitStructure.GPIO_Speed = GPIO_Speed_100MHz;//100MHz
   GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_UP;//上拉
   GPIO_Init(GPIOF, &GPIO_InitStructure);//初始化GPIO
+	
 	
 	GPIO_SetBits(GPIOF,GPIO_Pin_10 | GPIO_Pin_9);//GPIOF9,F10设置高，灯灭
 

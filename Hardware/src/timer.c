@@ -1,7 +1,10 @@
+#include "sys.h"
 #include "timer.h"
 #include "led.h"
 #include "motor.h"
 #include "usart3.h"
+#include "includes.h"					//ucos 使用	  
+
 //////////////////////////////////////////////////////////////////////////////////	 
 //本程序只供学习使用，未经作者许可，不得用于其它任何用途
 //ALIENTEK STM32F407开发板
@@ -21,12 +24,15 @@ extern u16 USART3_RX_STA;
 //如果串口接收时间超过100ms，则进入中断添加接收完成标志
 void TIM7_IRQHandler(void)
 { 	
+	OSIntEnter();  
 	if (TIM_GetITStatus(TIM7, TIM_IT_Update) != RESET)//是更新中断
 	{	 		
+		  
 			USART3_RX_STA|=1<<15;	//标记接收完成
 			TIM_ClearITPendingBit(TIM7, TIM_IT_Update  );  //清除TIM7更新中断标志    
 			TIM_Cmd(TIM7, DISABLE);  //关闭TIM7 
-	}	    
+	}	 
+	OSIntExit();  		
 }
  
 //通用定时器中断初始化

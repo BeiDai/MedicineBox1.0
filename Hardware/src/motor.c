@@ -1,3 +1,4 @@
+#include "sys.h"
 #include "motor.h"
 #include "ReedSwitch.h"
 #include "oled.h"

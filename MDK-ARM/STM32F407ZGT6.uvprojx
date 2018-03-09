@@ -454,21 +454,6 @@
               <FilePath>..\Hardware\src\led.c</FilePath>
             </File>
             <File>
-              <FileName>key.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\Hardware\src\key.c</FilePath>
-            </File>
-            <File>
-              <FileName>exti.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\Hardware\src\exti.c</FilePath>
-            </File>
-            <File>
-              <FileName>pwm.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\Hardware\src\pwm.c</FilePath>
-            </File>
-            <File>
               <FileName>usart3.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\Hardware\src\usart3.c</FilePath>
@@ -479,11 +464,6 @@
               <FilePath>..\Hardware\src\timer.c</FilePath>
             </File>
             <File>
-              <FileName>malloc.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\Hardware\src\malloc.c</FilePath>
-            </File>
-            <File>
               <FileName>ReedSwitch.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\Hardware\src\ReedSwitch.c</FilePath>
@@ -492,6 +472,11 @@
               <FileName>oled.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\Hardware\src\oled.c</FilePath>
+            </File>
+            <File>
+              <FileName>motor.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Hardware\src\motor.c</FilePath>
             </File>
           </Files>
         </Group>
@@ -717,11 +702,6 @@
               <FileName>wifi.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\ESP8266\wifi.c</FilePath>
-            </File>
-            <File>
-              <FileName>motor.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\ESP8266\motor.c</FilePath>
             </File>
           </Files>
         </Group>

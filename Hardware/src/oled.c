@@ -1,3 +1,4 @@
+#include "sys.h"
 #include "oled.h"
 #include "stdlib.h"
 #include "oledfont.h"  	 
