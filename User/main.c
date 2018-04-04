@@ -58,7 +58,7 @@ CPU_STK LED_TASK_STK[LED_STK_SIZE];
 //任务函数
 void led_task(void *p_arg);
 
-/************************  药盒位置初始化  ********************************/
+/************************  药盒位置初始化  ***************************/
 
 //任务优先级
 #define POS_TASK_PRIO		5
@@ -71,7 +71,7 @@ CPU_STK POS_TASK_STK[POS_STK_SIZE];
 //任务函数
 void pos_task(void *p_arg);
 
-/******************************  主任务  **********************************/
+/******************************  主任务  *****************************/
 
 //任务优先级
 #define MAIN_TASK_PRIO		6
@@ -84,7 +84,7 @@ __align(8) CPU_STK	MAIN_TASK_STK[MAIN_STK_SIZE];
 //任务函数
 void main_task(void *p_arg);
 
-/*****************************  主函数  ***********************************/
+/*****************************  主函数  ******************************/
 
 int main(void)
 {
@@ -99,7 +99,6 @@ int main(void)
 		usart3_init(115200); 
 		Motor_Init();
 		EN = 1; //关闭电机电源
-	  LED2=1;
 //	USART3_RX_STA=0; //允许接收数据
 //	positionNow = 1; //药盒初始位置为1
 	
@@ -120,8 +119,7 @@ int main(void)
 		
 	  atk_8266_config();
 		USART3_RX_STA=0; //允许接收数据
-	  printf("succed wifi config\r\n");
-		
+
 		
 		OSInit(&err);		//初始化UCOSIII
 		OS_CRITICAL_ENTER();//进入临界区
@@ -220,49 +218,59 @@ void start_task(void *p_arg)
 								 
 							
 }
-
+/*************************   LED工作指示灯   ******************************/
 
 void led_task(void *p_arg)
 {
 	OS_ERR err;
-	CPU_SR_ALLOC();
-	p_arg = p_arg;
+//	CPU_SR_ALLOC();
+//	p_arg = p_arg;
 	
 	while(1)
 	{
-		OS_CRITICAL_ENTER();	//进入临界区
-		LED2 = !LED2;
-		printf("LED TASK\r\n");
-		OS_CRITICAL_EXIT();	//退出临界区
+//		OS_CRITICAL_ENTER();	//进入临界区
+//		LED2 = 0;
+//		LED3 = 1;
+	//	delay_ms(200);
+	//	LED2 = 1;
+	//	delay_ms(200);
+		
+	//	boxPosition_Init(1,350,6400*1000);
+
+		
+//		atk_8266_send_cmd("AT+CIPSEND=0,6","OK",100);
+//		
+//		atk_8266_send_data("ackack","OK",100);
+		
+//		OS_CRITICAL_EXIT();	//退出临界区
 		OS_TaskSuspend((OS_TCB*)&LedTaskTCB,&err);		//挂起wifi初始化任务
 	}
 }
 
+/************************   药盒位置初始化   *****************************/
 void pos_task(void *p_arg)
 {
 	OS_ERR err;
-	CPU_SR_ALLOC();
-	p_arg = p_arg;
+//	CPU_SR_ALLOC();
+//	p_arg = p_arg;
 
 	while(1)
 	{
-		OS_CRITICAL_ENTER();	//进入临界区
-		printf("pos task \r\n");
+//		OS_CRITICAL_ENTER();	//进入临界区
 		boxPosition_Init(1,350,6400*1000);
 		positionNow = 1;
 		positionReceive = 1;
-		OS_CRITICAL_EXIT();	//退出临界区
+//		OS_CRITICAL_EXIT();	//退出临界区
 		OS_TaskSuspend((OS_TCB*)&PosTaskTCB,&err);		//挂起位置初始化任务
 	}		
 }
 
 
-
+/************************   主任务函数   **********************************/
 void main_task(void *p_arg)
 {
 	u16 rlen=0;
-	OS_ERR err;
-	printf("main task\r\n");
+//	OS_ERR err;
 	while(1)
 	{
 		if(USART3_RX_STA&0X8000)	
@@ -297,19 +305,13 @@ void main_task(void *p_arg)
 				case 8: OLED_ShowNum(74,17,positionReceive,1,12),OLED_Refresh_Gram(),
 								boxPosition(positionReceive);positionReceive=0,positionNow=8; break;
 			}
-			
+
 			USART3_RX_STA=0;
 		}
-		OSTaskResume((OS_TCB*)&LedTaskTCB,&err);	//
-		printf("恢复LED任务\r\n");
-		OSTimeDlyHMSM(0,0,1,0,OS_OPT_TIME_HMSM_STRICT,&err); //延时20ms
+//		OSTaskResume((OS_TCB*)&LedTaskTCB,&err);	
+//		OSTimeDlyHMSM(0,0,1,0,OS_OPT_TIME_HMSM_STRICT,&err); //延时1s
 		
 	}
 }
-
-
-
-
-
 
 
