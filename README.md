@@ -8,6 +8,9 @@
 - [OLED使用经验](/Experience/OLED使用经验.md)
 - [A4988驱动42步进电机](/Experience/A4988驱动42步进电机.md)
 - [干簧管使用经验](/Experience/干簧管使用经验.md)
+- [PCB板焊接经验](/Experience/PCB板焊接经验.md)
+- [PCB板设计经验](/Experience/PCB板设计经验.md)
+
 ### 项目所用到材料
 
   1. 本项目主控芯片是STM32F407ZGT6
