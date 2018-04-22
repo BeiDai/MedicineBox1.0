@@ -13,6 +13,7 @@
 #include "motor.h"
 #include "reedswitch.h"
 #include "oled.h"
+#include "rtc.h"
 
 /**************           uCOSIII 系统头文件      ***********************/
 
@@ -84,6 +85,13 @@ __align(8) CPU_STK	MAIN_TASK_STK[MAIN_STK_SIZE];
 //任务函数
 void main_task(void *p_arg);
 
+
+/*****************************  变量  ******************************/
+
+u16 SendTime; //发送数据时间 100ms*SendTime = 单片机发送数据间隔时间
+// SendTime = 60 ；6s钟一次
+
+
 /*****************************  主函数  ******************************/
 
 int main(void)
@@ -99,6 +107,11 @@ int main(void)
 		usart3_init(115200); 
 		Motor_Init();
 		EN = 1; //关闭电机电源
+	  //RTC的配置函数
+	  RTC_CLK_Config();
+		
+  	SendTime = 600;
+	
 //	USART3_RX_STA=0; //允许接收数据
 //	positionNow = 1; //药盒初始位置为1
 	
@@ -229,18 +242,26 @@ void led_task(void *p_arg)
 	while(1)
 	{
 //		OS_CRITICAL_ENTER();	//进入临界区
-//		LED2 = 0;
-//		LED3 = 1;
-	//	delay_ms(200);
-	//	LED2 = 1;
-	//	delay_ms(200);
+		LED2 = !LED2;
+		LED3 = !LED3;
 		
-	//	boxPosition_Init(1,350,6400*1000);
-
+		RTC_TimeAndDate_Show();
+	
+		if(SendTime == 0)
+		{
+			atk_8266_send_cmd("AT+CIPSEND=0,5","OK",50);
+    	atk_8266_send_data("!LED\n","OK",50);
+			SendTime = 600;
+			LED3 = !LED3;
+		}
+		else
+		{
+			SendTime--;
+		}
 		
-//		atk_8266_send_cmd("AT+CIPSEND=0,6","OK",100);
-//		
-//		atk_8266_send_data("ackack","OK",100);
+		
+//		atk_8266_send_cmd("AT+CIPSEND=0,6","OK",50);
+//		atk_8266_send_data("ackACK","OK",100);
 		
 //		OS_CRITICAL_EXIT();	//退出临界区
 		OS_TaskSuspend((OS_TCB*)&LedTaskTCB,&err);		//挂起wifi初始化任务
@@ -257,7 +278,7 @@ void pos_task(void *p_arg)
 	while(1)
 	{
 //		OS_CRITICAL_ENTER();	//进入临界区
-		boxPosition_Init(1,350,6400*1000);
+	//	boxPosition_Init(1,650,6400 *10000);
 		positionNow = 1;
 		positionReceive = 1;
 //		OS_CRITICAL_EXIT();	//退出临界区
@@ -268,48 +289,153 @@ void pos_task(void *p_arg)
 
 /************************   主任务函数   **********************************/
 void main_task(void *p_arg)
-{
-	u16 rlen=0;
-//	OS_ERR err;
+{ 
+	  
+	u16 rlen=0;	u16 i = 0; 
+	
+	// 定义用户数据起始位置
+	// < ><
+	// ><+><I><P><D><,><0><,><num><:>   <Start_Number>..... <\0>   num = rlen - 12;
+	// 如果num为个数：a[11]开始 Start_Number = 11;
+	// Start_Number = Start_Number + (num的位数)
+	u16 Start_Number=10; 
+	u8  Size = 0;	u16 n = 0;
+	
+	
+	// 定义药盒时间
+	u16 Set_Year; u8 Set_Month; u8 Set_Day; u8 Set_Hour; u8 Set_Minute; u8 Set_Second; u8 Set_Week;
+
+	OS_ERR err;
 	while(1)
 	{
 		if(USART3_RX_STA&0X8000)	
 		{
 			rlen=USART3_RX_STA&0X7FFF;	//得到本次接收到的数据长度
 			USART3_RX_BUF[rlen]=0;		//添加结束符 
-			positionReceive = USART3_RX_BUF[rlen-1] - '0'; //把字符转为整形
-			position1 = USART3_RX_BUF[rlen-2] - '0';
-			switch(positionReceive)
+			// printf(" 接收到 %d 位数据\n",rlen);
+			
+			for(i=0; i<=rlen; i++)
 			{
-				case 1: OLED_ShowNum(74,17,positionReceive,1,12),OLED_Refresh_Gram(),
-								boxPosition(positionReceive);positionReceive=0,positionNow=1; break;
+				printf("<%c>",USART3_RX_BUF[i]);
+			}
+			
+			/*********************   确定用户数据起始位置  Start_Number  **************************/
+			// 求出num的位数，修改用户数据起始位置
+			
+			n = rlen - 11; Size = 0;Start_Number=10; 
+			// printf("\n n = %d\n",n);
+			while(n>0)
+			{
+				Size++;
+				n/=10;
+			}
+			// printf("\n n = %d\n",n);
+			// 用户数据的起始位置
+			
+			Start_Number = Start_Number + Size;
+			
+			// printf("\nStart_Number = %d\n",Start_Number);
+			
+			/******************************   改变药盒位置    *************************************/
+			// 接收数据格式  0+位置
+			
+			if(USART3_RX_BUF[Start_Number] - '0'== 0)   // 发送格式 [0+位置]
+			{
+				positionReceive = USART3_RX_BUF[Start_Number+2] - '0'; //把字符转为整形
+				switch(positionReceive)
+				{
+					case 1: OLED_ShowNum(74,17,positionReceive,1,12),OLED_Refresh_Gram(),
+									boxPosition(positionReceive);positionReceive=0,positionNow=1; break;
+					
+					case 2: OLED_ShowNum(74,17,positionReceive,1,12),OLED_Refresh_Gram(),
+									boxPosition(positionReceive);positionReceive=0,positionNow=2; break;
+					
+					case 3: OLED_ShowNum(74,17,positionReceive,1,12),OLED_Refresh_Gram(),
+									boxPosition(positionReceive);positionReceive=0,positionNow=3; break;
+					
+					case 4: OLED_ShowNum(74,17,positionReceive,1,12),OLED_Refresh_Gram(),
+									boxPosition(positionReceive);positionReceive=0,positionNow=4; break;
+					
+					case 5: OLED_ShowNum(74,17,positionReceive,1,12),OLED_Refresh_Gram(),
+									boxPosition(positionReceive);positionReceive=0,positionNow=5;	break;
+					
+					case 6: OLED_ShowNum(74,17,positionReceive,1,12),OLED_Refresh_Gram(),
+									boxPosition(positionReceive);positionReceive=0,positionNow=6; break;
+					
+					case 7: OLED_ShowNum(74,17,positionReceive,1,12),OLED_Refresh_Gram(),
+									boxPosition(positionReceive);positionReceive=0,positionNow=7; break;
+					
+					case 8: OLED_ShowNum(74,17,positionReceive,1,12),OLED_Refresh_Gram(),
+									boxPosition(positionReceive);positionReceive=0,positionNow=8; break;
+				}
+			}
+			
+			/******************************   修改药盒时间   *************************************/
+			// 时间接收数据格式 6#0018-04-21#18:00:00#7
+			// 具有校验数据功能 正确则修改系统时间
+			
+			if(USART3_RX_BUF[Start_Number] - '0'== 6) 
+			{
 				
-				case 2: OLED_ShowNum(74,17,positionReceive,1,12),OLED_Refresh_Gram(),
-								boxPosition(positionReceive);positionReceive=0,positionNow=2; break;
+				// 定义时间数据的起始位置
 				
-				case 3: OLED_ShowNum(74,17,positionReceive,1,12),OLED_Refresh_Gram(),
-								boxPosition(positionReceive);positionReceive=0,positionNow=3; break;
+				u8 Date_Right = 0;  // 校验数据是否正确
+				u8 Number; 
+				u8 Frist_Number_Day = Start_Number + 2;  // 日期起始位置
+				u8 Frist_Number_Time = Start_Number +13; // 时间起始位置
+				u8 Number_Week = Start_Number + 22;			 // 周起始位置
 				
-				case 4: OLED_ShowNum(74,17,positionReceive,1,12),OLED_Refresh_Gram(),
-								boxPosition(positionReceive);positionReceive=0,positionNow=4; break;
+				// 转化数据为整型格式
+				for(Number=Start_Number+2; Number<=Start_Number+22 ; Number++)
+				{
+					USART3_RX_BUF[Number] = USART3_RX_BUF[Number] - '0';
+				}
 				
-				case 5: OLED_ShowNum(74,17,positionReceive,1,12),OLED_Refresh_Gram(),
-								boxPosition(positionReceive);positionReceive=0,positionNow=5;	break;
+				// 转化数据为年月日，时分秒，周，格式
+				Set_Year = USART3_RX_BUF[Frist_Number_Day]*1000 + USART3_RX_BUF[Frist_Number_Day+1]*100 + USART3_RX_BUF[Frist_Number_Day+2]*10 + USART3_RX_BUF[Frist_Number_Day+3];
+				Set_Month = USART3_RX_BUF[Frist_Number_Day+5]*10 + USART3_RX_BUF[Frist_Number_Day+6];
+				Set_Day = USART3_RX_BUF[Frist_Number_Day+8]*10 + USART3_RX_BUF[Frist_Number_Day+9];
 				
-				case 6: OLED_ShowNum(74,17,positionReceive,1,12),OLED_Refresh_Gram(),
-								boxPosition(positionReceive);positionReceive=0,positionNow=6; break;
 				
-				case 7: OLED_ShowNum(74,17,positionReceive,1,12),OLED_Refresh_Gram(),
-								boxPosition(positionReceive);positionReceive=0,positionNow=7; break;
+				Set_Hour = USART3_RX_BUF[Frist_Number_Time]*10 + USART3_RX_BUF[Frist_Number_Time+1];
+				Set_Minute = USART3_RX_BUF[Frist_Number_Time+3]*10 + USART3_RX_BUF[Frist_Number_Time+4];
+				Set_Second = USART3_RX_BUF[Frist_Number_Time+6]*10 + USART3_RX_BUF[Frist_Number_Time+7];
 				
-				case 8: OLED_ShowNum(74,17,positionReceive,1,12),OLED_Refresh_Gram(),
-								boxPosition(positionReceive);positionReceive=0,positionNow=8; break;
+				Set_Week = USART3_RX_BUF[Number_Week];
+				
+				// 判断数据是否满足格式要求
+				if(Set_Year>0 && Set_Year<999)			Date_Right = 1;  else Date_Right = 0;
+				if(Set_Month>0 && Set_Month<24)			Date_Right = 1;  else Date_Right = 0;
+				if(Set_Day>0 && Set_Day<32)					Date_Right = 1;  else Date_Right = 0;
+				
+				if(Set_Hour>0 && Set_Hour<24)				Date_Right = 1;  else Date_Right = 0;
+				if(Set_Minute>0 && Set_Minute<60)		Date_Right = 1;  else Date_Right = 0;
+				if(Set_Second>0 && Set_Second<60)		Date_Right = 1;  else Date_Right = 0;
+				
+				if(Set_Week>0 && Set_Week<=7)				Date_Right = 1;  else Date_Right = 0;
+				
+//				printf("Set_Year = %d\n",Set_Year);
+//				printf("Set_Month = %d\n",Set_Month);
+//				printf("Set_Day = %d\n",Set_Day);
+//				printf("Set_Hour = %d\n",Set_Hour);
+//				printf("Set_Minute = %d\n",Set_Minute);
+//				printf("Set_Second = %d\n",Set_Second);
+//				printf("Set_Week = %d\n",Set_Week);
+//				
+
+				// 数据满足格式要求更改系统时间
+				if(Date_Right == 1)
+				{
+					RTC_TimeAndDate_SetByUser(Set_Year,Set_Month,Set_Day,Set_Hour,Set_Minute,Set_Second,Set_Week);
+				}
 			}
 
-			USART3_RX_STA=0;
-		}
-//		OSTaskResume((OS_TCB*)&LedTaskTCB,&err);	
-//		OSTimeDlyHMSM(0,0,1,0,OS_OPT_TIME_HMSM_STRICT,&err); //延时1s
+				USART3_RX_STA=0;
+			}
+		
+		// 恢复LED任务
+		OSTaskResume((OS_TCB*)&LedTaskTCB,&err);	
+		OSTimeDlyHMSM(0,0,0,100,OS_OPT_TIME_HMSM_STRICT,&err); //延时100ms ，进入低优先级任务
 		
 	}
 }

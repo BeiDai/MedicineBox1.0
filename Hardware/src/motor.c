@@ -32,8 +32,7 @@ void Step_Control(u8 dir,u16 period,u32 steps) //1300--700
 	STEP = 0; 
 	delay_us(period); 
 	} 
-	delay_ms(10);
-	EN =1; 
+//	EN =1; 
 }
 // 药盒位置初始化，通过干簧管确定1号药盒的位置
 void  boxPosition_Init(u8 dir,u16 period,u32 steps) //1300--700
@@ -52,8 +51,8 @@ void  boxPosition_Init(u8 dir,u16 period,u32 steps) //1300--700
 		break;
 	}
 	} 
-	delay_ms(10);
-	EN =1; 
+//	delay_ms(200);
+//	EN =1; 
 //	OLED_ShowString(24,40,"ReedSwitch !  ",12);
 	OLED_Refresh_Gram();
 	positionNow = 1;
@@ -70,12 +69,12 @@ void boxPosition(u8 num)
 	temp = num - positionNow;
 	if(temp > 0)
 	{
-		Step_Control(0,350,800*temp);
+		Step_Control(0,650,400*temp);
 	}
 	else if(temp < 0)
 	{
 		temp = -temp;
-		Step_Control(1,350,800*temp);
+		Step_Control(1,650,400*temp);
 	}
 }
 
