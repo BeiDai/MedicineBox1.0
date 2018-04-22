@@ -10,6 +10,7 @@
 - [干簧管使用经验](/Experience/干簧管使用经验.md)
 - [PCB板焊接经验](/Experience/PCB板焊接经验.md)
 - [PCB板设计经验](/Experience/PCB板设计经验.md)
+- [手机APP修改RTC时间](/Experience/手机APP修改RTC时间.md)
 
 ### 项目所用到材料
 
